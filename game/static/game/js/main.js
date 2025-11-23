@@ -81,3 +81,48 @@ function sellNpc(cropTypeId, quantity) {
     });
 }
 
+function formatRemaining(seconds) {
+    if (seconds <= 0) return 'Ready now';
+    if (seconds < 60) return `${seconds}s`;
+    const minutes = Math.floor(seconds / 60);
+    if (seconds < 3600) return `${minutes}m`;
+    const hours = Math.floor(seconds / 3600);
+    return `${hours}h`;
+}
+
+function initTimers() {
+    function tick() {
+        const now = Date.now();
+        const elements = document.querySelectorAll('.plot-timer');
+
+        elements.forEach(el => {
+            const readyAtStr = el.getAttribute('data-ready-at');
+            if (!readyAtStr) return;
+
+            const readyAt = new Date(readyAtStr).getTime();
+            const diffSeconds = Math.floor((readyAt - now) / 1000);
+            const cell = el.closest('.plot-cell');
+
+            if (diffSeconds <= 0) {
+                el.textContent = 'Ready to harvest';
+
+                if (cell) {
+                    cell.classList.remove('plot-growing');
+                    cell.classList.add('plot-ready');
+
+                    const btn = cell.querySelector('.harvest-btn');
+                    if (btn) {
+                        btn.style.display = 'inline-block';
+                    }
+                }
+            } else {
+                el.textContent = 'Ready in ' + formatRemaining(diffSeconds);
+            }
+        });
+    }
+
+    tick();
+    setInterval(tick, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', initTimers);

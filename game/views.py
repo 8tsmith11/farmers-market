@@ -142,6 +142,8 @@ def sell_npc(request):
         'inventory_item': InventoryItemSerializer(item).data,
     })
 
+GRID_SIZE = 5
+
 @login_required
 def home(request):
     farm = Farm.objects.get(user=request.user)
@@ -149,9 +151,18 @@ def home(request):
     inventory = farm.inventory.select_related('crop_type')
     crop_types = CropType.objects.all()
 
+    plot_map = {(plot.x, plot.y): plot for plot in plots}
+    grid = []
+    for y in range(GRID_SIZE):
+        row = []
+        for x in range(GRID_SIZE):
+            row.append(plot_map.get((x, y)))
+        grid.append(row)
+
     context = {
         'farm': farm,
-        'plots': plots,
+        'grid': grid,
+        'grid_size': GRID_SIZE,
         'inventory': inventory,
         'crop_types': crop_types,
     }

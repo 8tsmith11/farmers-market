@@ -41,6 +41,22 @@ class Plot(models.Model):
             timezone.now() >= self.harvest_ready_at
         )
     
+    @property
+    def remaining_time_display(self):
+        if self.harvest_ready_at is None:
+            return ''
+        delta = self.harvest_ready_at - timezone.now()
+        total = int(delta.total_seconds())
+        if total <= 0:
+            return 'Ready now'
+        if total < 60:
+            return f'{total}s'
+        minutes = total // 60
+        if total < 3600:
+            return f'{minutes}m'
+        hours = total // 3600
+        return f'{hours}h'
+    
 class InventoryItem(models.Model):
     farm = models.ForeignKey(Farm, on_delete=models.CASCADE, related_name='inventory')
     crop_type = models.ForeignKey(CropType, on_delete=models.CASCADE)
