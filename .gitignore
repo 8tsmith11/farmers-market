@@ -12,6 +12,16 @@ dist/
 # Django/project
 *.sqlite3
 db.sqlite3
+media/
+staticfiles/
+*.log
+local_settings.py
 
 # Editors/OS
 .vscode/
+.DS_Store
+Thumbs.db
+
+# Env
+.env
+.env.*
