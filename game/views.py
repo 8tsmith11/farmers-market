@@ -147,10 +147,12 @@ def home(request):
     farm = Farm.objects.get(user=request.user)
     plots = farm.plots.all().order_by('y', 'x')
     inventory = farm.inventory.select_related('crop_type')
+    crop_types = CropType.objects.all()
 
     context = {
         'farm': farm,
         'plots': plots,
         'inventory': inventory,
+        'crop_types': crop_types,
     }
     return render(request, 'game/home.html', context)

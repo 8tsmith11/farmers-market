@@ -9,5 +9,5 @@ urlpatterns = [
     path('plots/<int:plot_id>/plant/', views.plant, name='plant'),
     path('plots/<int:plot_id>/harvest/', views.harvest, name='harvest'),
     path('inventory/', views.inventory_list, name='inventory-list'),
-    path('inventory/sell-npc', views.sell_npc, name='sell-npc'),
+    path('inventory/sell-npc/', views.sell_npc, name='sell-npc'),
 ]
