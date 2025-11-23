@@ -9,81 +9,94 @@
     <link rel="stylesheet" href="{% static 'game/css/main.css' %}">
 </head>
 <body>
-    <h1>Farmers Market</h1>
+    <div class="page">
+        <header class="hero">
+            <h1>Farmers Market</h1>
+            <h2>{{ farm.name }}</h2>
+        </header>
 
-    <h2>{{ farm.name }}</h2>
-    <p>Balance: {{ farm.balance }} coins</p>
+        <section class="stage">
+            <aside class="sidebar floating">
+                <div class="farm-card">
+                    <div class="stat-label">Balance</div>
+                    <div class="stat-value">{{ farm.balance }} coins</div>
+                </div>
 
-    <h3>Plots</h3>
-    <div class="grid-wrapper">
-        <div class="grid" style="--grid-size: {{ grid_size }}">
-            {% for row in grid %}
-                {% for plot in row %}
-                    {% if plot %}
-                        {% if plot.crop_type %}
-                            {% if plot.is_ready %}
-                                <div class="plot-cell plot-ready">
-                                    <div class="plot-title">{{ plot.crop_type.name }}</div>
-                                    <div class="plot-meta">Ready to harvest</div>
-                                    <button type="button"
-                                            class="harvest-btn"
-                                            onclick="harvestPlot({{ plot.id }})">
-                                        Harvest
-                                    </button>
-                                </div>
-                            {% else %}
-                                <div class="plot-cell plot-growing">
-                                    <div class="plot-title">{{ plot.crop_type.name }}</div>
-                                    <div class="plot-meta plot-timer"
-                                        data-ready-at="{{ plot.harvest_ready_at|date:'c' }}">
-                                        Ready in {{ plot.remaining_time_display }}
+                <div class="inventory-card">
+                    <h3>Inventory</h3>
+                    <ul>
+                        {% for item in inventory %}
+                            <li>
+                                {{ item.crop_type.name }}: {{ item.quantity }}
+                                <button type="button" class="sell-btn" onclick="sellNpc({{ item.crop_type.id }}, {{ item.quantity }})">
+                                    Sell all to NPC
+                                </button>
+                            </li>
+                        {% empty %}
+                            <li>No crops in inventory.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </aside>
+
+            <div class="grid-panel">
+                <div class="grid" style="--grid-size: {{ grid_size }}">
+                    {% for row in grid %}
+                        {% for plot in row %}
+                            {% if plot %}
+                                {% if plot.crop_type %}
+                                    {% if plot.is_ready %}
+                                        <div class="plot-cell plot-ready">
+                                            <div class="plot-title">{{ plot.crop_type.name }}</div>
+                                            <div class="plot-meta">Ready to harvest</div>
+                                            <button type="button"
+                                                    class="harvest-btn"
+                                                    onclick="harvestPlot({{ plot.id }})">
+                                                Harvest
+                                            </button>
+                                        </div>
+                                    {% else %}
+                                        <div class="plot-cell plot-growing">
+                                            <div class="plot-title">{{ plot.crop_type.name }}</div>
+                                            <div class="plot-meta plot-timer"
+                                                data-ready-at="{{ plot.harvest_ready_at|date:'c' }}">
+                                                Ready in {{ plot.remaining_time_display }}
+                                            </div>
+                                            <button type="button"
+                                                    class="harvest-btn"
+                                                    style="display: none;"
+                                                    onclick="harvestPlot({{ plot.id }})">
+                                                Harvest
+                                            </button>
+                                        </div>
+                                    {% endif %}
+                                {% else %}
+                                    <div class="plot-cell plot-empty">
+                                        <div class="plot-title">Empty</div>
+                                        <select id="crop-select-{{ plot.id }}">
+                                            <option value="">-- choose crop --</option>
+                                            {% for crop in crop_types %}
+                                                <option value="{{ crop.id }}">{{ crop.name }}</option>
+                                            {% endfor %}
+                                        </select>
+                                        <button type="button"
+                                                class="plant-btn"
+                                                onclick="plantPlot({{ plot.id }})">
+                                            Plant
+                                        </button>
                                     </div>
-                                    <button type="button"
-                                            class="harvest-btn"
-                                            style="display: none;"
-                                            onclick="harvestPlot({{ plot.id }})">
-                                        Harvest
-                                    </button>
+                                {% endif %}
+                            {% else %}
+                                <div class="plot-cell plot-empty">
+                                    <div class="plot-title">No plot</div>
                                 </div>
                             {% endif %}
-                        {% else %}
-                            <div class="plot-cell plot-empty">
-                                <div class="plot-title">Empty</div>
-                                <select id="crop-select-{{ plot.id }}">
-                                    <option value="">-- choose crop --</option>
-                                    {% for crop in crop_types %}
-                                        <option value="{{ crop.id }}">{{ crop.name }}</option>
-                                    {% endfor %}
-                                </select>
-                                <button type="button"
-                                        class="plant-btn"
-                                        onclick="plantPlot({{ plot.id }})">
-                                    Plant
-                                </button>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="plot-cell plot-empty">
-                            <div class="plot-title">No plot</div>
-                        </div>
-                    {% endif %}
-                {% endfor %}
-            {% endfor %}
-        </div>
+                        {% endfor %}
+                    {% endfor %}
+                </div>
+            </div>
+        </section>
     </div>
-    <h3>Inventory</h3>
-    <ul>
-        {% for item in inventory %}
-            <li>
-                {{ item.crop_type.name }}: {{ item.quantity }}
-                <button type="button" onclick="sellNpc({{ item.crop_type.id }}, {{ item.quantity }})">
-                    Sell all to NPC
-                </button>
-            </li>
-        {% empty %}
-            <li>No crops in inventory.</li>
-        {% endfor %}
-    </ul>
 
     <script src="{% static 'game/js/main.js' %}"></script>
 </body>

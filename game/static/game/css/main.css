@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Ranchers&family=Nunito:wght@400;600&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Kalam:wght@400;700&family=Nunito:wght@400;600&display=swap');
 
 :root {
   --bg-sky: #cde8ff;
@@ -26,16 +26,26 @@ body {
     url('../img/day.png');
   background-size: cover;
   background-repeat: no-repeat;
-  background-position: center -40px;
+  background-position: center center;
   color: var(--text);
   min-height: 100vh;
   padding: 24px;
 }
 
 h1, h2, h3 {
-  font-family: 'Ranchers', 'Nunito', sans-serif;
+  font-family: 'Kalam', 'Nunito', sans-serif;
   letter-spacing: 0.01em;
   margin: 0 0 12px;
+}
+
+h1 {
+  font-size: 48px;
+  text-shadow: 0 3px 0 rgba(0,0,0,0.12);
+}
+
+h2 {
+  font-size: 28px;
+  text-shadow: 0 2px 0 rgba(0,0,0,0.1);
 }
 
 .page {
@@ -63,11 +73,13 @@ h1, h2, h3 {
 }
 
 .sidebar.floating {
-  position: absolute;
-  left: 0;
-  top: 0;
+  position: fixed;
+  left: 8%;
+  top: 200px;
+  transform: none;
   width: min(300px, 26vw);
   max-width: 320px;
+  z-index: 5;
 }
 
 .farm-card, .inventory-card {
