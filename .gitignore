@@ -1,0 +1,17 @@
+# Python artifacts
+__pycache__/
+.eggs/
+*.py[cod]
+build/
+dist/
+*.egg-info/
+
+# Virtual environment
+.venv/
+
+# Django/project
+*.sqlite3
+db.sqlite3
+
+# Editors/OS
+.vscode/
