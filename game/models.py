@@ -20,6 +20,9 @@ class CropType(models.Model):
     base_price = models.PositiveIntegerField()
     seed_price = models.PositiveIntegerField()
 
+    def __str__(self):
+        return self.name
+
 class Plot(models.Model):
     farm = models.ForeignKey(Farm, on_delete=models.CASCADE, related_name='plots')
     x = models.PositiveSmallIntegerField(default=0)

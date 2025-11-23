@@ -5,6 +5,7 @@ from rest_framework.response import Response
 from django.utils import timezone
 from datetime import timedelta
 from rest_framework import status
+from django.contrib.auth.decorators import login_required
 
 from .models import Farm, CropType, InventoryItem, Plot
 from .serializers import FarmSerializer, CropTypeSerializer, InventoryItemSerializer, PlotSerializer
@@ -141,5 +142,15 @@ def sell_npc(request):
         'inventory_item': InventoryItemSerializer(item).data,
     })
 
+@login_required
 def home(request):
-    return render(request, 'game/home.html')
+    farm = Farm.objects.get(user=request.user)
+    plots = farm.plots.all().order_by('y', 'x')
+    inventory = farm.inventory.select_related('crop_type')
+
+    context = {
+        'farm': farm,
+        'plots': plots,
+        'inventory': inventory,
+    }
+    return render(request, 'game/home.html', context)

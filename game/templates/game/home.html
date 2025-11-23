@@ -7,6 +7,33 @@
 </head>
 <body>
     <h1>Farmers Market</h1>
-    <p>Welcome to the Farmers Market game!</p>
+
+    <h2>{{ farm.name }}</h2>
+    <p>Balance: {{ farm.balance }} coins</p>
+
+    <h3>Plots</h3>
+    <ul>
+        {% for plot in plots %}
+            <li>
+                ({{ plot.x }}, {{plot.y }}) - 
+                {% if plot.crop_type %}
+                    {{ plot.crop_type.name }}
+                {% else %}
+                    Empty
+                {% endif %}
+            </li>
+        {% empty %}
+            <li>No plots yet.</li>
+        {% endfor %}
+    </ul>
+
+    <h3>Inventory</h3>
+    <ul>
+        {% for item in inventory %}
+            <li>{{ item.crop_type.name }}: {{ item.quantity }}</li>
+        {% empty %}
+            <li>No crops in inventory.</li>
+        {% endfor %}
+    </ul>
 </body>
 </html>
