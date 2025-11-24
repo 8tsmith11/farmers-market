@@ -307,6 +307,7 @@ document.addEventListener('DOMContentLoaded', () => {
         qtyInput.addEventListener('input', capQuantity);
         capQuantity();
     }
+    initMarketRefresh();
 });
 
 function submitMarketListing() {
@@ -413,6 +414,49 @@ async function refreshBalance() {
             balanceEl.textContent = `${data.balance} coins`;
         }
     } catch {}
+}
+
+function renderMarketListings(listings) {
+    const listEl = document.querySelector('.market-list');
+    if (!listEl) return;
+
+    if (!listings || !listings.length) {
+        listEl.innerHTML = '<div class="market-empty">No listings matching your contracts.</div>';
+        return;
+    }
+
+    const html = listings.map(l => {
+        const cropName = l.crop_type?.name || 'Crop';
+        const qty = l.quantity || 0;
+        const unit = l.unit_price || 0;
+        const total = qty * unit;
+        return `
+            <div class="market-item">
+                <div class="market-item-row">
+                    <span><strong>${cropName}</strong>, ${qty}, ${unit}c each. Total:${total}c</span>
+                    <button type="button" class="sell-btn market-buy-btn" onclick="buyListing(${l.id})">Buy</button>
+                </div>
+            </div>
+        `;
+    }).join('');
+
+    listEl.innerHTML = html;
+}
+
+function initMarketRefresh() {
+    async function tick() {
+        try {
+            const resp = await fetch('/api/market/listings/');
+            if (!resp.ok) return;
+            const data = await resp.json();
+            renderMarketListings(data);
+        } catch (_) {
+            // ignore refresh errors
+        }
+    }
+
+    tick();
+    setInterval(tick, 5000);
 }
 function updatePlotCellGrowing(plot) {
     const cell = document.querySelector(`.plot-cell[data-plot-id="${plot.id}"]`);
