@@ -252,6 +252,11 @@ h2 {
   opacity: 0.85;
 }
 
+.contract-unlock {
+  font-weight: 700;
+  color: #1f6f30;
+}
+
 .contract-expired {
   opacity: 0.6;
   text-decoration: line-through;

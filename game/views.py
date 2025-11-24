@@ -52,6 +52,9 @@ def plant(request, plot_id):
     
     crop_type = get_object_or_404(CropType, id=crop_type_id)
 
+    if farm.unlocked_crops.exists() and not farm.unlocked_crops.filter(id=crop_type.id).exists():
+        return Response({'detail': 'Seed not unlocked'}, status=status.HTTP_403_FORBIDDEN)
+
     if farm.balance < crop_type.seed_price:
         return Response({'detail': 'Insufficient funds to plant this crop.'}, status=status.HTTP_400_BAD_REQUEST)
     
@@ -149,7 +152,7 @@ def home(request):
     farm = Farm.objects.get(user=request.user)
     plots = farm.plots.all().order_by('y', 'x')
     inventory = farm.inventory.select_related('crop_type')
-    crop_types = CropType.objects.all()
+    crop_types = farm.unlocked_crops.all() or CropType.objects.all()
     contracts = ensure_contracts_for_farm(farm)
 
     plot_map = {(plot.x, plot.y): plot for plot in plots}
@@ -185,42 +188,6 @@ def complete_contract(request, contract_id):
     contract = get_object_or_404(Contract, id=contract_id, farm=farm)
 
     if contract.is_completed:
-        return Response({'detail': 'Contract already completed.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    if contract.is_expired:
-        return Response({'detail': 'Contract expired.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    try:
-        item = InventoryItem.objects.get(farm=farm, crop_type=contract.crop_type)
-    except InventoryItem.DoesNotExist:
-        return Response({'detail': 'Not enough inventory to complete contract.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    if item.quantity < contract.quantity_required:
-        return Response({'detail': 'Not enough inventory to complete contract.'}, status=status.HTTP_400_BAD_REQUEST)
-
-    item.quantity -= contract.quantity_required
-    item.save()
-
-    farm.balance += contract.reward_coins
-    farm.save()
-
-    contract.completed_at = timezone.now()
-    contract.save()
-
-    serializer = ContractSerializer(contract)
-    return Response({
-        'contract': serializer.data,
-        'balance': farm.balance,
-        'inventory_item': InventoryItemSerializer(item).data,
-    })
-
-@api_view(['POST'])
-@permission_classes([IsAuthenticated])
-def complete_contract(request, contract_id):
-    farm = Farm.objects.get(user=request.user)
-    contract = get_object_or_404(Contract, id=contract_id, farm=farm)
-
-    if contract.is_completed:
         return Response({'detail': 'Contract is already completed.'}, status=status.HTTP_400_BAD_REQUEST)
     
     if contract.is_expired:
@@ -239,6 +206,10 @@ def complete_contract(request, contract_id):
     # reward coins
     farm.balance += contract.reward_coins
     farm.save()
+
+    # unlock crop if applicable
+    if contract.unlocks_crop and not farm.unlocked_crops.filter(id=contract.unlocks_crop.id).exists():
+        farm.unlocked_crops.add(contract.unlocks_crop)
 
     # mark completed
     contract.completed_at = timezone.now()

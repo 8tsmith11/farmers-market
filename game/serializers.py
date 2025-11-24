@@ -27,6 +27,7 @@ class InventoryItemSerializer(serializers.ModelSerializer):
 
 class ContractSerializer(serializers.ModelSerializer):
     crop_type = CropTypeSerializer(read_only=True)
+    unlocks_crop = CropTypeSerializer(read_only=True)
     is_active = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
 
@@ -39,6 +40,7 @@ class ContractSerializer(serializers.ModelSerializer):
             'reward_coins', 
             'created_at',
             'expires_at', 
+            'unlocks_crop',
             'is_active',
             'is_completed',
         ]

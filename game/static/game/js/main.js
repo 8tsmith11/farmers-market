@@ -150,11 +150,9 @@ function initSellInputs() {
 
 function formatRemaining(seconds) {
     if (seconds <= 0) return 'Ready now';
-    if (seconds < 60) return `${seconds}s`;
     const minutes = Math.floor(seconds / 60);
-    if (seconds < 3600) return `${minutes}m`;
-    const hours = Math.floor(seconds / 3600);
-    return `${hours}h`;
+    const secs = Math.max(0, seconds % 60);
+    return `${minutes}:${secs.toString().padStart(2, '0')}`;
 }
 
 function initTimers() {

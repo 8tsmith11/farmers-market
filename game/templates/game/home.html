@@ -133,6 +133,9 @@
                                 data-quantity="{{ contract.quantity_required }}">
                                 <div class="contract-title">{{ contract.crop_type.name }} ×{{ contract.quantity_required }}</div>
                                 <div class="contract-meta">Reward: {{ contract.reward_coins }} coins</div>
+                                {% if contract.unlocks_crop %}
+                                    <div class="contract-meta contract-unlock">Unlocks: {{ contract.unlocks_crop.name }}</div>
+                                {% endif %}
                                 {% if contract.is_completed %}
                                     <div class="contract-meta">Completed</div>
                                 {% endif %}
