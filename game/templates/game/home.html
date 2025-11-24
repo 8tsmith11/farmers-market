@@ -80,9 +80,9 @@
                             {% if plot %}
                                 {% if plot.crop_type %}
                                     {% if plot.is_ready %}
-                                        <div class="plot-cell plot-ready" data-plot-id="{{ plot.id }}">
+                                        <div class="plot-cell plot-ready" data-plot-id="{{ plot.id }}" data-emoji="{{ plot.crop_type.emoji|default:'🌾' }}">
                                             <div class="plot-title">{{ plot.crop_type.name }}</div>
-                                            <div class="plot-meta">Ready to harvest</div>
+                                            <div class="plot-meta plot-ready-emoji" data-emoji="{{ plot.crop_type.emoji|default:'🌾' }}">🌾</div>
                                             <button type="button"
                                                     class="harvest-btn"
                                                     onclick="harvestPlot({{ plot.id }})">
@@ -90,7 +90,7 @@
                                             </button>
                                         </div>
                                     {% else %}
-                                        <div class="plot-cell plot-growing" data-plot-id="{{ plot.id }}">
+                                        <div class="plot-cell plot-growing" data-plot-id="{{ plot.id }}" data-emoji="{{ plot.crop_type.emoji|default:'🌾' }}">
                                             <div class="plot-title">{{ plot.crop_type.name }}</div>
                                             <div class="plot-meta plot-timer"
                                                 data-ready-at="{{ plot.harvest_ready_at|date:'c' }}">

@@ -176,11 +176,14 @@ function updateTimers() {
         const cell = el.closest('.plot-cell');
 
         if (diffSeconds <= 0) {
-            el.textContent = 'Ready to harvest';
+            const emoji = el.getAttribute('data-emoji') || cell?.getAttribute('data-emoji') || '🌾';
+            el.textContent = emoji;
+            el.classList.add('plot-ready-emoji');
 
             if (cell) {
                 cell.classList.remove('plot-growing');
                 cell.classList.add('plot-ready');
+                cell.setAttribute('data-emoji', emoji);
 
                 const btn = cell.querySelector('.harvest-btn');
                 if (btn) {
@@ -417,11 +420,13 @@ function updatePlotCellGrowing(plot) {
 
     const readyAt = plot.harvest_ready_at;
     const cropName = plot.crop_type?.name || 'Crop';
+    const emoji = plot.crop_type?.emoji || '🌾';
 
     cell.className = 'plot-cell plot-growing';
+    cell.setAttribute('data-emoji', emoji);
     cell.innerHTML = `
         <div class="plot-title">${cropName}</div>
-        <div class="plot-meta plot-timer" data-ready-at="${readyAt}">Ready in ...</div>
+        <div class="plot-meta plot-timer" data-ready-at="${readyAt}" data-emoji="${emoji}">Ready in ...</div>
         <button type="button" class="harvest-btn" style="display: none;" onclick="harvestPlot(${plot.id})">Harvest</button>
     `;
 }

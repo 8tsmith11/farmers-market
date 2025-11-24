@@ -21,6 +21,7 @@ class CropType(models.Model):
     grow_time_seconds = models.PositiveIntegerField()
     base_price = models.PositiveIntegerField()
     seed_price = models.PositiveIntegerField()
+    emoji = models.CharField(max_length=4, blank=True, default='')
 
     def __str__(self):
         return self.name
@@ -102,7 +103,7 @@ class Contract(models.Model):
     def is_active(self):
         return not self.is_completed and not self.is_expired
     
-CONTRACT_DURATION_MINUTES = 5
+CONTRACT_DURATION_MINUTES = 1
 
 
 def ensure_contracts_for_farm(farm, desired_count=3):
@@ -174,8 +175,11 @@ def ensure_contracts_for_farm(farm, desired_count=3):
                 unlock_already_present = True
 
         payment_crop = pick_payment_crop()
-        quantity_required = random.randint(5, 20)
-        reward_coins = quantity_required * payment_crop.base_price
+        quantity_required = random.randint(15, 50)
+
+        premium = random.uniform(1.1, 1.5)
+        base_total = quantity_required * payment_crop.base_price
+        reward_coins = int(base_total * premium)
 
         Contract.objects.create(
             farm=farm,

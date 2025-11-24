@@ -532,6 +532,11 @@ h2 {
   flex-direction: column;
   justify-content: center;
   box-shadow: 0 2px 0 rgba(0,0,0,0.12);
+  z-index: 1;
+}
+.plot-cell > * {
+  position: relative;
+  z-index: 1;
 }
 
 .plot-ready { background: var(--tile-ready); border-color: #d69e2e; }
@@ -540,6 +545,22 @@ h2 {
 .plot-empty { cursor: pointer; }
 .plot-title { font-weight: 600; margin-bottom: 4px; }
 .plot-meta { font-size: 11px; opacity: 0.9; }
+.plot-ready-emoji { font-size: 0; opacity: 0; } /* actual emoji hidden; background handles display */
+.plot-ready {
+  position: relative;
+}
+.plot-ready::before {
+  content: attr(data-emoji);
+  position: absolute;
+  inset: 6px;
+  font-size: 70px;
+  opacity: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+}
 
 button {
   font-family: inherit;
@@ -564,7 +585,7 @@ button:active {
   box-shadow: 0 1px 0 var(--accent-dark);
 }
 
-button.harvest-btn { background: #2f9e44; border-color: #1f6f30; }
+button.harvest-btn { background: rgba(47, 158, 68, 0.5); border-color: #1f6f30; color: #0f2918; font-weight: 700; text-shadow: 0 1px 0 rgba(255,255,255,0.4); }
 button.plant-btn   { background: #2563eb; border-color: #1d4ed8; }
 button.sell-btn    { background: #f97316; border-color: #c0560f; }
 

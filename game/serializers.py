@@ -9,7 +9,7 @@ class FarmSerializer(serializers.ModelSerializer):
 class CropTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = CropType
-        fields = ['id', 'name', 'grow_time_seconds', 'base_price', 'seed_price']
+        fields = ['id', 'name', 'grow_time_seconds', 'base_price', 'seed_price', 'emoji']
 
 class PlotSerializer(serializers.ModelSerializer):
     crop_type = CropTypeSerializer(read_only=True)
