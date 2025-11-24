@@ -9,9 +9,10 @@ from django.contrib.auth.decorators import login_required
 from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, logout as auth_logout
+from django.db.models import F
 
-from .models import Contract, Farm, CropType, InventoryItem, Plot, create_farm_for_user, ensure_contracts_for_farm
-from .serializers import ContractSerializer, FarmSerializer, CropTypeSerializer, InventoryItemSerializer, PlotSerializer
+from .models import Contract, Farm, CropType, InventoryItem, MarketListing, Plot, create_farm_for_user, ensure_contracts_for_farm
+from .serializers import ContractSerializer, FarmSerializer, CropTypeSerializer, InventoryItemSerializer, MarketListingSerializer, PlotSerializer
 
 # Create your views here.
 
@@ -162,7 +163,7 @@ def home(request):
         farm = create_farm_for_user(request.user)
     plots = farm.plots.all().order_by('y', 'x')
     inventory = farm.inventory.select_related('crop_type')
-    crop_types = farm.unlocked_crops.all() or CropType.objects.all()
+    crop_types = list(farm.unlocked_crops.all() or CropType.objects.all())
     contracts = ensure_contracts_for_farm(farm)
 
     plot_map = {(plot.x, plot.y): plot for plot in plots}
@@ -173,6 +174,23 @@ def home(request):
             row.append(plot_map.get((x, y)))
         grid.append(row)
 
+    contract_crop_ids = list(
+        Contract.objects.filter(farm=farm, completed_at__isnull=True)
+        .values_list('crop_type_id', flat=True)
+        .distinct()
+    )
+    inventory_map = {item.crop_type_id: item.quantity for item in inventory}
+    for crop in crop_types:
+        crop.available_quantity = inventory_map.get(crop.id, 0)
+
+    market_listings = MarketListing.objects.filter(
+        active=True,
+        quantity__gt=0,
+        crop_type_id__in=contract_crop_ids,
+    ).exclude(seller=farm).select_related('crop_type', 'seller').annotate(
+        total_price=F('quantity') * F('unit_price')
+    ).order_by('unit_price')
+
     context = {
         'farm': farm,
         'user': request.user,
@@ -181,6 +199,9 @@ def home(request):
         'inventory': inventory,
         'crop_types': crop_types,
         'contracts': contracts,
+        'market_listings': market_listings,
+        'contract_crop_ids': contract_crop_ids,
+        'inventory_map': inventory_map,
     }
     return render(request, 'game/home.html', context)
 
@@ -248,3 +269,123 @@ def signup(request):
     else:
         form = SignUpForm()
     return render(request, 'registration/signup.html', {'form': form})
+
+@api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
+def market_create_listing(request):
+    farm = Farm.objects.get(user=request.user)
+
+    if request.method == 'GET':
+        contract_crop_ids = list(
+            Contract.objects.filter(farm=farm, completed_at__isnull=True)
+            .values_list('crop_type_id', flat=True)
+            .distinct()
+        )
+        listings = MarketListing.objects.filter(
+            active=True,
+            quantity__gt=0,
+            crop_type_id__in=contract_crop_ids,
+        ).exclude(seller=farm).select_related('crop_type', 'seller').order_by('unit_price')
+        serializer = MarketListingSerializer(listings, many=True)
+        return Response(serializer.data)
+
+    crop_type_id = request.data.get('crop_type_id')
+    quantity = request.data.get('quantity')
+    unit_price = request.data.get('unit_price')
+
+    if crop_type_id is None or quantity is None or unit_price is None:
+        return Response(
+            {'detail': 'crop_type_id, quantity, and unit_price are required'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    try:
+        quantity = int(quantity)
+        unit_price = int(unit_price)
+    except ValueError:
+        return Response(
+            {'detail': 'quantity and unit_price must be integers'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    if quantity <= 0 or unit_price <= 0:
+        return Response(
+            {'detail': 'quantity and unit_price must be positive'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+
+    crop_type = get_object_or_404(CropType, id=crop_type_id)
+
+    # check inventory
+    item = InventoryItem.objects.filter(farm=farm, crop_type=crop_type).first()
+    if item is None or item.quantity <= 0:
+        return Response(
+            {'detail': 'Not enough crop in inventory to create listing'},
+            status=status.HTTP_400_BAD_REQUEST,
+        )
+    if quantity > item.quantity:
+        quantity = item.quantity
+
+    # lock items into listing: remove from inventory
+    item.quantity -= quantity
+    item.save()
+
+    listing = MarketListing.objects.create(
+        seller=farm,
+        crop_type=crop_type,
+        quantity=quantity,
+        unit_price=unit_price,
+        active=True,
+    )
+
+    return Response(MarketListingSerializer(listing).data, status=status.HTTP_201_CREATED)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def market_buy(request, listing_id):
+    buyer_farm = Farm.objects.get(user=request.user)
+    listing = get_object_or_404(MarketListing, id=listing_id, active=True)
+
+    if listing.seller_id == buyer_farm.id:
+        return Response({'detail': 'Cannot buy from your own listing'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    if listing.quantity <= 0:
+        return Response({'detail': 'Listing has no quantity left'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    quantity = listing.quantity
+
+    total_price = quantity * listing.unit_price
+
+    if buyer_farm.balance < total_price:
+        return Response({'detail': 'Not enough coins'},
+                        status=status.HTTP_400_BAD_REQUEST)
+
+    # transfer coins
+    buyer_farm.balance -= total_price
+    buyer_farm.save()
+
+    seller_farm = listing.seller
+    seller_farm.balance += total_price
+    seller_farm.save()
+
+    # move items to buyer
+    item, _ = InventoryItem.objects.get_or_create(
+        farm=buyer_farm,
+        crop_type=listing.crop_type,
+        defaults={'quantity': 0},
+    )
+    item.quantity += quantity
+    item.save()
+
+    # update listing
+    listing.quantity = 0
+    listing.active = False
+    listing.save()
+
+    return Response({
+        'listing': MarketListingSerializer(listing).data,
+        'buyer_farm': FarmSerializer(buyer_farm).data,
+        'seller_farm': FarmSerializer(seller_farm).data,
+    })

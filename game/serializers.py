@@ -1,5 +1,5 @@
 from rest_framework import serializers
-from .models import Contract, Farm, CropType, Plot, InventoryItem
+from .models import Contract, Farm, CropType, MarketListing, Plot, InventoryItem
 
 class FarmSerializer(serializers.ModelSerializer):
     class Meta:
@@ -49,3 +49,19 @@ class ContractSerializer(serializers.ModelSerializer):
         return obj.is_active
     def get_is_completed(self, obj):
         return obj.is_completed
+
+class MarketListingSerializer(serializers.ModelSerializer):
+    crop_type = CropTypeSerializer(read_only=True)
+    seller_name = serializers.CharField(source='seller.name', read_only=True)
+
+    class Meta:
+        model = MarketListing
+        fields = [
+            'id',
+            'seller_name',
+            'crop_type',
+            'quantity',
+            'unit_price',
+            'active',
+            'created_at',
+        ]

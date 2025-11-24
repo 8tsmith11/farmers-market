@@ -102,7 +102,7 @@ class Contract(models.Model):
     def is_active(self):
         return not self.is_completed and not self.is_expired
     
-CONTRACT_DURATION_MINUTES = 10
+CONTRACT_DURATION_MINUTES = 5
 
 
 def ensure_contracts_for_farm(farm, desired_count=3):
@@ -218,4 +218,23 @@ def create_farm_for_user(user, custom_name=None):
             Plot.objects.create(farm=farm, x=x, y=y)
 
     return farm
+
+class MarketListing(models.Model):
+    seller = models.ForeignKey(
+        Farm,
+        on_delete=models.CASCADE,
+        related_name='market_listings',
+    )
+    crop_type = models.ForeignKey(CropType, on_delete=models.CASCADE)
+    quantity = models.PositiveIntegerField()
+    unit_price = models.PositiveIntegerField()  # coins per unit
+    active = models.BooleanField(default=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f'{self.quantity} {self.crop_type.name} @ {self.unit_price}c (seller={self.seller.name})'
+
+    @property
+    def is_open(self):
+        return self.active and self.quantity > 0
 

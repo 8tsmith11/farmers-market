@@ -25,7 +25,7 @@
             <aside class="sidebar floating">
                 <div class="farm-card">
                     <div class="stat-label stat-label-strong">Balance</div>
-                    <div class="stat-value">{{ farm.balance }} coins</div>
+                    <div class="stat-value" id="farm-balance-value">{{ farm.balance }} coins</div>
                 </div>
                 <div class="seed-card">
                     <div class="seed-selector">
@@ -45,7 +45,7 @@
                     <ul>
                         {% for item in inventory %}
                             <li>
-                                <div class="inventory-line">
+                                <div class="inventory-line" data-crop-id="{{ item.crop_type.id }}">
                                     <span class="inventory-name">{{ item.crop_type.name }}: {{ item.quantity }} ({{ item.crop_type.base_price }}c)</span>
                                     <input type="number"
                                            id="sell-qty-{{ item.crop_type.id }}"
@@ -80,7 +80,7 @@
                             {% if plot %}
                                 {% if plot.crop_type %}
                                     {% if plot.is_ready %}
-                                        <div class="plot-cell plot-ready">
+                                        <div class="plot-cell plot-ready" data-plot-id="{{ plot.id }}">
                                             <div class="plot-title">{{ plot.crop_type.name }}</div>
                                             <div class="plot-meta">Ready to harvest</div>
                                             <button type="button"
@@ -90,7 +90,7 @@
                                             </button>
                                         </div>
                                     {% else %}
-                                        <div class="plot-cell plot-growing">
+                                        <div class="plot-cell plot-growing" data-plot-id="{{ plot.id }}">
                                             <div class="plot-title">{{ plot.crop_type.name }}</div>
                                             <div class="plot-meta plot-timer"
                                                 data-ready-at="{{ plot.harvest_ready_at|date:'c' }}">
@@ -150,6 +150,39 @@
                             <li>No active contracts.</li>
                         {% endfor %}
                     </ul>
+                </div>
+                <div class="market-board">
+                    <div class="market-card">
+                        <div class="market-header">
+                            <h3>Market</h3>
+                            <button type="button" class="sell-btn market-toggle-btn" onclick="toggleMarketForm()">Create listing</button>
+                        </div>
+                        <div class="market-form hidden" id="market-form">
+                            <select id="market-crop-select">
+                                <option value="">Crop</option>
+                                {% for crop in crop_types %}
+                                    <option value="{{ crop.id }}" data-available="{{ crop.available_quantity }}">{{ crop.name }} ({{ crop.base_price }}c)</option>
+                                {% endfor %}
+                            </select>
+                            <input id="market-qty" type="number" min="1" placeholder="Qty">
+                            <input id="market-price" type="number" min="1" placeholder="Unit price">
+                            <button type="button" class="sell-btn inventory-sell-btn" onclick="submitMarketListing()">List</button>
+                        </div>
+                        <div class="market-list">
+                            {% if market_listings %}
+                                {% for listing in market_listings %}
+                                    <div class="market-item">
+                                        <div class="market-item-row">
+                                            <span><strong>{{ listing.crop_type.name }}</strong>, {{ listing.quantity }}, {{ listing.unit_price }}c each. Total: {{ listing.total_price }}c</span>
+                                            <button type="button" class="sell-btn market-buy-btn" onclick="buyListing({{ listing.id }})">Buy</button>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            {% else %}
+                                <div class="market-empty">No listings matching your contracts.</div>
+                            {% endif %}
+                        </div>
+                    </div>
                 </div>
             </aside>
         </section>

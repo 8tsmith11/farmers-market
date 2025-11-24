@@ -239,6 +239,102 @@ h2 {
   z-index: 5;
 }
 
+.market-board {
+  margin-top: 12px;
+}
+
+.market-card {
+  background: rgba(255, 255, 255, 0.92);
+  border-radius: 12px;
+  padding: 12px;
+  border: 2px solid #7a4a20;
+  box-shadow: 0 3px 0 rgba(0,0,0,0.18);
+  max-height: 420px;
+  display: flex;
+  flex-direction: column;
+}
+
+.market-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 8px;
+}
+
+.market-toggle-btn {
+  padding: 6px 10px;
+  font-size: 12px;
+}
+
+.market-form {
+  display: grid;
+  grid-template-columns: 1fr 80px 90px;
+  gap: 6px;
+  margin-bottom: 8px;
+  transition: max-height 0.2s ease;
+  align-items: center;
+}
+
+.market-form select,
+.market-form input {
+  width: 100%;
+  padding: 6px 8px;
+  min-height: 32px;
+  border-radius: 8px;
+  border: 1px solid #cbb89b;
+  margin-top: -4px;
+}
+
+.market-form.hidden {
+  display: none;
+}
+
+.market-list {
+  max-height: 260px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.market-item {
+  background: #fff7e6;
+  border: 1px solid #c38b4b;
+  border-radius: 10px;
+  padding: 8px;
+  box-shadow: 0 2px 0 rgba(0,0,0,0.08);
+}
+
+.market-item-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  align-items: center;
+  font-size: 12px;
+}
+
+.market-item strong {
+  font-size: 13px;
+}
+
+.market-item-row span {
+  white-space: nowrap;
+  flex: 1;
+}
+
+.market-empty {
+  font-size: 13px;
+  opacity: 0.8;
+  text-align: center;
+}
+
+.market-buy-btn {
+  margin-left: auto;
+  width: auto;
+  padding: 6px 8px;
+  text-align: center;
+}
 .farm-card, .inventory-card {
   background: rgba(255, 247, 230, 0.9);
   border-radius: 12px;

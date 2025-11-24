@@ -12,4 +12,6 @@ urlpatterns = [
     path('inventory/sell-npc/', views.sell_npc, name='sell-npc'),
     path('contracts/', views.contract_list, name='contract-list'),
     path('contracts/<int:contract_id>/complete/', views.complete_contract, name='complete-contract'),
+    path('market/listings/', views.market_create_listing, name='market-create-listing'),
+    path('market/listings/<int:listing_id>/buy/', views.market_buy, name='market-buy'),
 ]
