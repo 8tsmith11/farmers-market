@@ -10,6 +10,7 @@ from django import forms
 from django.contrib.auth.forms import UserCreationForm
 from django.contrib.auth import login, logout as auth_logout
 from django.db.models import F
+from django.db import transaction
 
 from .models import Contract, Farm, CropType, InventoryItem, MarketListing, Plot, create_farm_for_user, ensure_contracts_for_farm
 from .serializers import ContractSerializer, FarmSerializer, CropTypeSerializer, InventoryItemSerializer, MarketListingSerializer, PlotSerializer
@@ -316,27 +317,26 @@ def market_create_listing(request):
 
     crop_type = get_object_or_404(CropType, id=crop_type_id)
 
-    # check inventory
-    item = InventoryItem.objects.filter(farm=farm, crop_type=crop_type).first()
-    if item is None or item.quantity <= 0:
-        return Response(
-            {'detail': 'Not enough crop in inventory to create listing'},
-            status=status.HTTP_400_BAD_REQUEST,
+    with transaction.atomic():
+        item = InventoryItem.objects.select_for_update().filter(farm=farm, crop_type=crop_type).first()
+        if item is None or item.quantity <= 0:
+            return Response(
+                {'detail': 'Not enough crop in inventory to create listing'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if quantity > item.quantity:
+            quantity = item.quantity
+
+        item.quantity -= quantity
+        item.save()
+
+        listing = MarketListing.objects.create(
+            seller=farm,
+            crop_type=crop_type,
+            quantity=quantity,
+            unit_price=unit_price,
+            active=True,
         )
-    if quantity > item.quantity:
-        quantity = item.quantity
-
-    # lock items into listing: remove from inventory
-    item.quantity -= quantity
-    item.save()
-
-    listing = MarketListing.objects.create(
-        seller=farm,
-        crop_type=crop_type,
-        quantity=quantity,
-        unit_price=unit_price,
-        active=True,
-    )
 
     return Response(MarketListingSerializer(listing).data, status=status.HTTP_201_CREATED)
 
@@ -344,45 +344,50 @@ def market_create_listing(request):
 @permission_classes([IsAuthenticated])
 def market_buy(request, listing_id):
     buyer_farm = Farm.objects.get(user=request.user)
-    listing = get_object_or_404(MarketListing, id=listing_id, active=True)
 
-    if listing.seller_id == buyer_farm.id:
-        return Response({'detail': 'Cannot buy from your own listing'},
-                        status=status.HTTP_400_BAD_REQUEST)
+    with transaction.atomic():
+        listing = MarketListing.objects.select_for_update().select_related('seller', 'crop_type').filter(
+            id=listing_id,
+            active=True,
+        ).first()
+        if listing is None:
+            return Response({'detail': 'Listing not found or inactive'}, status=status.HTTP_404_NOT_FOUND)
 
-    if listing.quantity <= 0:
-        return Response({'detail': 'Listing has no quantity left'},
-                        status=status.HTTP_400_BAD_REQUEST)
+        if listing.seller_id == buyer_farm.id:
+            return Response({'detail': 'Cannot buy from your own listing'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-    quantity = listing.quantity
+        if listing.quantity <= 0:
+            return Response({'detail': 'Listing has no quantity left'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-    total_price = quantity * listing.unit_price
+        quantity = listing.quantity
+        total_price = quantity * listing.unit_price
 
-    if buyer_farm.balance < total_price:
-        return Response({'detail': 'Not enough coins'},
-                        status=status.HTTP_400_BAD_REQUEST)
+        buyer_farm = Farm.objects.select_for_update().get(id=buyer_farm.id)
 
-    # transfer coins
-    buyer_farm.balance -= total_price
-    buyer_farm.save()
+        if buyer_farm.balance < total_price:
+            return Response({'detail': 'Not enough coins'},
+                            status=status.HTTP_400_BAD_REQUEST)
 
-    seller_farm = listing.seller
-    seller_farm.balance += total_price
-    seller_farm.save()
+        buyer_farm.balance -= total_price
+        buyer_farm.save()
 
-    # move items to buyer
-    item, _ = InventoryItem.objects.get_or_create(
-        farm=buyer_farm,
-        crop_type=listing.crop_type,
-        defaults={'quantity': 0},
-    )
-    item.quantity += quantity
-    item.save()
+        seller_farm = Farm.objects.select_for_update().get(id=listing.seller_id)
+        seller_farm.balance += total_price
+        seller_farm.save()
 
-    # update listing
-    listing.quantity = 0
-    listing.active = False
-    listing.save()
+        item, _ = InventoryItem.objects.select_for_update().get_or_create(
+            farm=buyer_farm,
+            crop_type=listing.crop_type,
+            defaults={'quantity': 0},
+        )
+        item.quantity += quantity
+        item.save()
+
+        listing.quantity = 0
+        listing.active = False
+        listing.save()
 
     return Response({
         'listing': MarketListingSerializer(listing).data,
