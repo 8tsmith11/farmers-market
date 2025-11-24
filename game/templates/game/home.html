@@ -33,7 +33,7 @@
                         <select id="global-crop-select">
                             <option value="">-- Select a Crop --</option>
                             {% for crop in crop_types %}
-                                <option value="{{ crop.id }}">{{ crop.name }}</option>
+                                <option value="{{ crop.id }}">{{ crop.name }} ({{ crop.seed_price }}c)</option>
                             {% endfor %}
                         </select>
                     </div>
@@ -46,7 +46,7 @@
                         {% for item in inventory %}
                             <li>
                                 <div class="inventory-line">
-                                    <span class="inventory-name">{{ item.crop_type.name }}: {{ item.quantity }}</span>
+                                    <span class="inventory-name">{{ item.crop_type.name }}: {{ item.quantity }} ({{ item.crop_type.base_price }}c)</span>
                                     <input type="number"
                                            id="sell-qty-{{ item.crop_type.id }}"
                                            data-crop-id="{{ item.crop_type.id }}"
