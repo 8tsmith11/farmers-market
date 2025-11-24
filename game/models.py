@@ -1,6 +1,7 @@
 from django.db import models
 from django.contrib.auth import get_user_model
 from django.utils import timezone
+import random
 
 User = get_user_model()
 
@@ -68,3 +69,65 @@ class InventoryItem(models.Model):
     def __str__(self):
         return f"{self.quantity} x {self.crop_type.name} on {self.farm.name}"
     
+class Contract(models.Model):
+    farm = models.ForeignKey(Farm, on_delete=models.CASCADE, related_name='contracts')
+    crop_type = models.ForeignKey(CropType, on_delete=models.CASCADE)
+    quantity_required = models.PositiveIntegerField()
+    reward_coins = models.PositiveIntegerField()
+    created_at = models.DateTimeField(auto_now_add=True)
+    expires_at = models.DateTimeField()
+    completed_at = models.DateTimeField(null=True, blank=True)
+    
+    def __str__(self):
+        return f"Contract for {self.quantity_required} x {self.crop_type.name} for {self.farm.name}"
+    
+    @property
+    def is_completed(self):
+        return self.completed_at is not None
+    
+    @property
+    def is_expired(self):
+        return timezone.now() >= self.expires_at
+    
+    @property
+    def is_active(self):
+        return not self.is_completed and not self.is_expired
+    
+CONTRACT_DURATION_MINUTES = 10
+def ensure_contracts_for_farm(farm, desired_count=3):
+    now = timezone.now()
+    Contract.objects.filter(farm=farm, expires_at__lte=now).delete()
+
+    active = Contract.objects.filter(
+        farm = farm,
+        completed_at__isnull=True,
+        expires_at__gt=now,
+    )
+
+    needed = desired_count - active.count()
+    if needed <= 0:
+        return active
+    
+    crop_types = list(CropType.objects.all())
+    if not crop_types:
+        return active
+    
+    for _ in range(needed):
+        crop = random.choice(crop_types)
+        quantity_required = random.randint(5, 20)
+        reward_coins = quantity_required * crop.base_price
+        expires_at = now + timezone.timedelta(minutes=CONTRACT_DURATION_MINUTES)
+
+        Contract.objects.create(
+            farm = farm,
+            crop_type = crop,
+            quantity_required = quantity_required,
+            reward_coins = reward_coins,   
+            expires_at = expires_at,
+        )
+
+    return Contract.objects.filter(
+        farm = farm,
+        completed_at__isnull=True,
+        expires_at__gt=now,
+    )

@@ -95,6 +95,22 @@
                     {% endfor %}
                 </div>
             </div>
+            <aside class="contracts-board floating">
+                <div class="contracts-card">
+                    <h3>Contracts</h3>
+                    <ul class="contracts-list">
+                        {% for contract in contracts %}
+                            <li class="{% if contract.is_active %}contract-active{% else %}contract-expired{% endif %}">
+                                <div class="contract-title">{{ contract.crop_type.name }} ×{{ contract.quantity_required }}</div>
+                                <div class="contract-meta">Reward: {{ contract.reward_coins }} coins</div>
+                                <div class="contract-meta">Expires in {{ contract.expires_at|timeuntil }}</div>
+                            </li>
+                        {% empty %}
+                            <li>No active contracts.</li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            </aside>
         </section>
     </div>
 

@@ -10,4 +10,5 @@ urlpatterns = [
     path('plots/<int:plot_id>/harvest/', views.harvest, name='harvest'),
     path('inventory/', views.inventory_list, name='inventory-list'),
     path('inventory/sell-npc/', views.sell_npc, name='sell-npc'),
+    path('contracts/', views.contract_list, name='contract-list'),
 ]

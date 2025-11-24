@@ -7,8 +7,8 @@ from datetime import timedelta
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
 
-from .models import Farm, CropType, InventoryItem, Plot
-from .serializers import FarmSerializer, CropTypeSerializer, InventoryItemSerializer, PlotSerializer
+from .models import Farm, CropType, InventoryItem, Plot, ensure_contracts_for_farm
+from .serializers import ContractSerializer, FarmSerializer, CropTypeSerializer, InventoryItemSerializer, PlotSerializer
 
 # Create your views here.
 
@@ -150,6 +150,7 @@ def home(request):
     plots = farm.plots.all().order_by('y', 'x')
     inventory = farm.inventory.select_related('crop_type')
     crop_types = CropType.objects.all()
+    contracts = ensure_contracts_for_farm(farm)
 
     plot_map = {(plot.x, plot.y): plot for plot in plots}
     grid = []
@@ -165,5 +166,14 @@ def home(request):
         'grid_size': GRID_SIZE,
         'inventory': inventory,
         'crop_types': crop_types,
+        'contracts': contracts,
     }
     return render(request, 'game/home.html', context)
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def contract_list(request):
+    farm = Farm.objects.get(user=request.user)
+    contracts = ensure_contracts_for_farm(farm)
+    serializer = ContractSerializer(contracts, many=True)
+    return Response(serializer.data)
