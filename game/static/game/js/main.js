@@ -433,7 +433,7 @@ function renderMarketListings(listings) {
         return `
             <div class="market-item">
                 <div class="market-item-row">
-                    <span><strong>${cropName}</strong>, ${qty}, ${unit}c each. Total:${total}c</span>
+                    <span><strong>${cropName}</strong>, ${qty}, ${unit}c each. Total: ${total}c</span>
                     <button type="button" class="sell-btn market-buy-btn" onclick="buyListing(${l.id})">Buy</button>
                 </div>
             </div>
