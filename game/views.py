@@ -1,4 +1,4 @@
-from django.shortcuts import render, get_object_or_404
+from django.shortcuts import render, get_object_or_404, redirect
 from rest_framework.decorators import api_view, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
@@ -6,8 +6,11 @@ from django.utils import timezone
 from datetime import timedelta
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
+from django import forms
+from django.contrib.auth.forms import UserCreationForm
+from django.contrib.auth import login, logout as auth_logout
 
-from .models import Contract, Farm, CropType, InventoryItem, Plot, ensure_contracts_for_farm
+from .models import Contract, Farm, CropType, InventoryItem, Plot, create_farm_for_user, ensure_contracts_for_farm
 from .serializers import ContractSerializer, FarmSerializer, CropTypeSerializer, InventoryItemSerializer, PlotSerializer
 
 # Create your views here.
@@ -15,6 +18,10 @@ from .serializers import ContractSerializer, FarmSerializer, CropTypeSerializer,
 @api_view(['GET'])
 def health_check(request): 
     return Response({'status': 'ok'})
+
+def logout_view(request):
+    auth_logout(request)
+    return redirect('login')
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -149,7 +156,10 @@ GRID_SIZE = 5
 
 @login_required
 def home(request):
-    farm = Farm.objects.get(user=request.user)
+    try:
+        farm = Farm.objects.get(user=request.user)
+    except Farm.DoesNotExist:
+        farm = create_farm_for_user(request.user)
     plots = farm.plots.all().order_by('y', 'x')
     inventory = farm.inventory.select_related('crop_type')
     crop_types = farm.unlocked_crops.all() or CropType.objects.all()
@@ -165,6 +175,7 @@ def home(request):
 
     context = {
         'farm': farm,
+        'user': request.user,
         'grid': grid,
         'grid_size': GRID_SIZE,
         'inventory': inventory,
@@ -219,3 +230,21 @@ def complete_contract(request, contract_id):
         'farm': FarmSerializer(farm).data,
         'contract': ContractSerializer(contract).data,
     })
+
+class SignUpForm(UserCreationForm):
+    farm_name = forms.CharField(max_length=100, label='Farm name', required=True)
+
+    class Meta(UserCreationForm.Meta):
+        fields = UserCreationForm.Meta.fields + ('farm_name',)
+
+def signup(request):
+    if request.method == 'POST':
+        form = SignUpForm(request.POST)
+        if form.is_valid():
+            user = form.save()
+            create_farm_for_user(user, custom_name=form.cleaned_data.get('farm_name'))
+            login(request, user)
+            return redirect('home')
+    else:
+        form = SignUpForm()
+    return render(request, 'registration/signup.html', {'form': form})

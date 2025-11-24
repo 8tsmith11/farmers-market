@@ -11,6 +11,12 @@
 <body>
     <div class="page">
         <header class="hero">
+            <div class="header-meta">
+                <div class="header-meta-box">
+                    <span class="user-meta">Logged in as: {{ user.username }}</span>
+                    <a class="logout-link" href="{% url 'logout' %}">Logout</a>
+                </div>
+            </div>
             <h1>Farmers Market</h1>
             <h2>{{ farm.name }}</h2>
         </header>

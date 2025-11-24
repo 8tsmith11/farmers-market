@@ -190,3 +190,32 @@ def ensure_contracts_for_farm(farm, desired_count=3):
         farm=farm,
         expires_at__gt=now,
     ).order_by('created_at')[:desired_count]
+
+GRID_SIZE = 5
+def create_farm_for_user(user, custom_name=None):
+    from django.utils.text import slugify
+
+    # avoid duplicate farms
+    if hasattr(user, "farm"):
+        return user.farm
+
+    farm = Farm.objects.create(
+        user=user,
+        name=custom_name or f"{user.username}'s Farm",
+        balance=1,
+    )
+
+    # unlock Wheat if it exists
+    try:
+        wheat = CropType.objects.get(name="Wheat")
+        farm.unlocked_crops.add(wheat)
+    except CropType.DoesNotExist:
+        pass
+
+    # create full GRID_SIZE x GRID_SIZE plots
+    for y in range(GRID_SIZE):
+        for x in range(GRID_SIZE):
+            Plot.objects.create(farm=farm, x=x, y=y)
+
+    return farm
+
