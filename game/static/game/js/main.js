@@ -89,6 +89,65 @@ function sellNpc(cropTypeId, quantity) {
     });
 }
 
+function sellNpcPartial(cropTypeId) {
+    const input = document.getElementById(`sell-qty-${cropTypeId}`);
+    if (!input) return;
+
+    const qty = parseInt(input.value, 10);
+    if (!qty || qty <= 0) {
+        alert('Enter a positive quantity');
+        return;
+    }
+
+    saveSellQty(cropTypeId, qty);
+    sellNpc(cropTypeId, qty);
+}
+
+function setMaxSellQty(cropTypeId, maxQty) {
+    const input = document.getElementById(`sell-qty-${cropTypeId}`);
+    if (!input) return;
+    input.value = maxQty;
+    saveSellQty(cropTypeId, maxQty);
+}
+
+function saveSellQty(cropTypeId, qty) {
+    try {
+        if (window.localStorage) {
+            window.localStorage.setItem(`sellQty_${cropTypeId}`, qty.toString());
+        }
+    } catch (_) {}
+}
+
+function getSavedSellQty(cropTypeId) {
+    try {
+        if (!window.localStorage) return null;
+        const raw = window.localStorage.getItem(`sellQty_${cropTypeId}`);
+        if (!raw) return null;
+        const parsed = parseInt(raw, 10);
+        return Number.isFinite(parsed) ? parsed : null;
+    } catch (_) {
+        return null;
+    }
+}
+
+function initSellInputs() {
+    const inputs = document.querySelectorAll('.sell-qty-input');
+    inputs.forEach(input => {
+        const cropId = input.getAttribute('data-crop-id');
+        const maxVal = parseInt(input.getAttribute('max'), 10);
+        const saved = cropId ? getSavedSellQty(cropId) : null;
+        if (saved !== null) {
+            const applied = Math.min(saved, Number.isFinite(maxVal) ? maxVal : saved);
+            input.value = applied;
+        }
+        input.addEventListener('change', () => {
+            const val = parseInt(input.value, 10);
+            if (!val || val <= 0) return;
+            saveSellQty(cropId, Math.min(val, Number.isFinite(maxVal) ? maxVal : val));
+        });
+    });
+}
+
 function formatRemaining(seconds) {
     if (seconds <= 0) return 'Ready now';
     if (seconds < 60) return `${seconds}s`;
@@ -217,6 +276,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
         globalSeedSelect.addEventListener('change', (e) => setSelectedSeed(e.target.value));
     }
+    initSellInputs();
     initTimers();
     initContractBoard();
 });

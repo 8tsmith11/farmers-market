@@ -39,10 +39,26 @@
                     <ul>
                         {% for item in inventory %}
                             <li>
-                                {{ item.crop_type.name }}: {{ item.quantity }}
-                                <button type="button" class="sell-btn" onclick="sellNpc({{ item.crop_type.id }}, {{ item.quantity }})">
-                                    Sell all to NPC
-                                </button>
+                                <div class="inventory-line">
+                                    <span class="inventory-name">{{ item.crop_type.name }}: {{ item.quantity }}</span>
+                                    <input type="number"
+                                           id="sell-qty-{{ item.crop_type.id }}"
+                                           data-crop-id="{{ item.crop_type.id }}"
+                                           class="sell-qty-input"
+                                           min="1"
+                                           max="{{ item.quantity }}"
+                                           value="{{ item.quantity }}">
+                                    <button type="button"
+                                            class="sell-btn inventory-sell-btn"
+                                            onclick="setMaxSellQty({{ item.crop_type.id }}, {{ item.quantity }})">
+                                        Max
+                                    </button>
+                                    <button type="button"
+                                            class="sell-btn inventory-sell-btn"
+                                            onclick="sellNpcPartial({{ item.crop_type.id }})">
+                                        Sell
+                                    </button>
+                                </div>
                             </li>
                         {% empty %}
                             <li>No crops in inventory.</li>
