@@ -58,6 +58,34 @@ h2 {
   margin-bottom: 16px;
 }
 
+.seed-selector {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+
+.seed-selector select {
+  width: 140px;
+  padding: 6px 8px;
+  border-radius: 8px;
+  border: 1px solid #cbb89b;
+  background: #fff;
+  font-family: 'Nunito', system-ui, sans-serif;
+}
+
+.seed-selector label {
+  font-family: 'Kalam', 'Nunito', sans-serif;
+  font-weight: 700;
+}
+
+.seed-hint {
+  font-size: 12px;
+  opacity: 0.8;
+  text-align: left;
+}
+
 .stage {
   position: relative;
   display: flex;
@@ -80,6 +108,14 @@ h2 {
   width: min(300px, 26vw);
   max-width: 320px;
   z-index: 5;
+}
+
+.seed-card {
+  background: rgba(255, 247, 230, 0.9);
+  border-radius: 12px;
+  padding: 10px 12px;
+  border: 2px solid #d2b48c;
+  box-shadow: 0 3px 0 #b37a30;
 }
 
 .contracts-board.floating {
@@ -124,15 +160,26 @@ h2 {
 }
 
 .stat-label {
-  font-size: 12px;
+  font-size: 13px;
   text-transform: uppercase;
   letter-spacing: 0.05em;
-  opacity: 0.8;
+  opacity: 1;
+  font-family: 'Kalam', 'Nunito', sans-serif;
+  font-weight: 700;
+  color: #4a3526;
+}
+
+.stat-label-strong {
+  font-size: 14px;
+  letter-spacing: 0.08em;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.12);
 }
 
 .stat-value {
-  font-size: 20px;
-  font-weight: 700;
+  font-size: 24px;
+  font-weight: 800;
+  color: #2f241d;
+  text-shadow: 0 1px 0 rgba(0,0,0,0.12);
 }
 
 .inventory-card ul {
@@ -237,6 +284,7 @@ h2 {
 .plot-ready { background: var(--tile-ready); border-color: #d69e2e; }
 .plot-growing { background: var(--tile-grow); border-color: #6bbf59; }
 .plot-empty { background: var(--tile-empty); border-color: #c4a484; }
+.plot-empty { cursor: pointer; }
 .plot-title { font-weight: 600; margin-bottom: 4px; }
 .plot-meta { font-size: 11px; opacity: 0.9; }
 

@@ -18,8 +18,20 @@
         <section class="stage">
             <aside class="sidebar floating">
                 <div class="farm-card">
-                    <div class="stat-label">Balance</div>
+                    <div class="stat-label stat-label-strong">Balance</div>
                     <div class="stat-value">{{ farm.balance }} coins</div>
+                </div>
+                <div class="seed-card">
+                    <div class="seed-selector">
+                        <label for="global-crop-select">Choose Seed:</label>
+                        <select id="global-crop-select">
+                            <option value="">-- Select a Crop --</option>
+                            {% for crop in crop_types %}
+                                <option value="{{ crop.id }}">{{ crop.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="seed-hint">Click an empty plot to plant.</div>
                 </div>
 
                 <div class="inventory-card">
@@ -71,23 +83,15 @@
                                         </div>
                                     {% endif %}
                                 {% else %}
-                                    <div class="plot-cell plot-empty">
+                                    <div class="plot-cell plot-empty"
+                                         data-plot-id="{{ plot.id }}"
+                                         onclick="plantPlot({{ plot.id }})">
                                         <div class="plot-title">Empty</div>
-                                        <select id="crop-select-{{ plot.id }}">
-                                            <option value="">-- choose crop --</option>
-                                            {% for crop in crop_types %}
-                                                <option value="{{ crop.id }}">{{ crop.name }}</option>
-                                            {% endfor %}
-                                        </select>
-                                        <button type="button"
-                                                class="plant-btn"
-                                                onclick="plantPlot({{ plot.id }})">
-                                            Plant
-                                        </button>
                                     </div>
                                 {% endif %}
                             {% else %}
-                                <div class="plot-cell plot-empty">
+                                <div class="plot-cell plot-empty"
+                                     data-plot-id="none">
                                     <div class="plot-title">No plot</div>
                                 </div>
                             {% endif %}

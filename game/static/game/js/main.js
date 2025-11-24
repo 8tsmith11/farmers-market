@@ -6,12 +6,20 @@ function getCookie(name) {
 
 const csrftoken = getCookie('csrftoken');
 
+let selectedSeedId = null;
+
+function setSelectedSeed(cropTypeId) {
+    selectedSeedId = cropTypeId || null;
+    try {
+        if (window.localStorage) {
+            window.localStorage.setItem('selectedSeedId', selectedSeedId || '');
+        }
+    } catch (_) {}
+}
+
 function plantPlot(plotId) {
-    const select = document.getElementById(`crop-select-${plotId}`);
-    if (!select) return;
-    const cropTypeId = select.value;
-    if (!cropTypeId) {
-        alert('Choose a crop first');
+    if (!selectedSeedId) {
+        alert('Choose a seed first');
         return;
     }
 
@@ -21,7 +29,7 @@ function plantPlot(plotId) {
             'Content-Type': 'application/json',
             'X-CSRFToken': csrftoken,
         },
-        body: JSON.stringify({ crop_type_id: cropTypeId }),
+        body: JSON.stringify({ crop_type_id: selectedSeedId }),
     }).then(async (resp) => {
         if (resp.ok) {
             window.location.reload();
@@ -193,6 +201,22 @@ function initContractBoard() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
+    const globalSeedSelect = document.getElementById('global-crop-select');
+    if (globalSeedSelect) {
+        let savedSeed = null;
+        try {
+            savedSeed = window.localStorage ? window.localStorage.getItem('selectedSeedId') : null;
+        } catch (_) {}
+
+        if (savedSeed) {
+            globalSeedSelect.value = savedSeed;
+            setSelectedSeed(savedSeed);
+        } else {
+            setSelectedSeed(globalSeedSelect.value);
+        }
+
+        globalSeedSelect.addEventListener('change', (e) => setSelectedSeed(e.target.value));
+    }
     initTimers();
     initContractBoard();
 });
