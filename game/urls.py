@@ -11,4 +11,5 @@ urlpatterns = [
     path('inventory/', views.inventory_list, name='inventory-list'),
     path('inventory/sell-npc/', views.sell_npc, name='sell-npc'),
     path('contracts/', views.contract_list, name='contract-list'),
+    path('contracts/<int:contract_id>/complete/', views.complete_contract, name='complete-contract'),
 ]

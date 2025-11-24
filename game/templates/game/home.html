@@ -97,13 +97,25 @@
             </div>
             <aside class="contracts-board floating">
                 <div class="contracts-card">
-                    <h3>Contracts</h3>
+                    <div class="contracts-header">
+                        <h3>Contracts</h3>
+                        {% if contracts %}
+                            <div class="contracts-timer" id="contracts-timer" data-expires-at="{{ contracts.0.expires_at|date:'c' }}">
+                                New Contracts In: {{ contracts.0.expires_at|timeuntil }}
+                            </div>
+                        {% endif %}
+                    </div>
                     <ul class="contracts-list">
                         {% for contract in contracts %}
-                            <li class="{% if contract.is_active %}contract-active{% else %}contract-expired{% endif %}">
+                            <li class="contract-item {% if contract.is_completed %}contract-completed{% elif contract.is_active %}contract-active{% else %}contract-expired{% endif %}"
+                                data-contract-id="{{ contract.id }}"
+                                data-crop-id="{{ contract.crop_type.id }}"
+                                data-quantity="{{ contract.quantity_required }}">
                                 <div class="contract-title">{{ contract.crop_type.name }} ×{{ contract.quantity_required }}</div>
                                 <div class="contract-meta">Reward: {{ contract.reward_coins }} coins</div>
-                                <div class="contract-meta">Expires in {{ contract.expires_at|timeuntil }}</div>
+                                {% if contract.is_completed %}
+                                    <div class="contract-meta">Completed</div>
+                                {% endif %}
                             </li>
                         {% empty %}
                             <li>No active contracts.</li>
@@ -115,5 +127,10 @@
     </div>
 
     <script src="{% static 'game/js/main.js' %}"></script>
+    {% if contracts %}
+    <script>
+        window.contractsExpireAt = "{{ contracts.0.expires_at|date:'c' }}";
+    </script>
+    {% endif %}
 </body>
 </html>

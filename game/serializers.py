@@ -44,6 +44,6 @@ class ContractSerializer(serializers.ModelSerializer):
         ]
         
     def get_is_active(self, obj):
-        return obj.is_active()
+        return obj.is_active
     def get_is_completed(self, obj):
         return obj.is_completed

@@ -98,36 +98,35 @@ def ensure_contracts_for_farm(farm, desired_count=3):
     now = timezone.now()
     Contract.objects.filter(farm=farm, expires_at__lte=now).delete()
 
-    active = Contract.objects.filter(
-        farm = farm,
-        completed_at__isnull=True,
+    existing = Contract.objects.filter(
+        farm=farm,
         expires_at__gt=now,
-    )
+    ).order_by('created_at')
 
-    needed = desired_count - active.count()
-    if needed <= 0:
-        return active
-    
+    if existing.count() >= desired_count:
+        return existing[:desired_count]
+
     crop_types = list(CropType.objects.all())
     if not crop_types:
-        return active
-    
+        return existing
+
+    batch_expires_at = existing.first().expires_at if existing.exists() else now + timezone.timedelta(minutes=CONTRACT_DURATION_MINUTES)
+    needed = max(0, desired_count - existing.count())
+
     for _ in range(needed):
         crop = random.choice(crop_types)
         quantity_required = random.randint(5, 20)
         reward_coins = quantity_required * crop.base_price
-        expires_at = now + timezone.timedelta(minutes=CONTRACT_DURATION_MINUTES)
 
         Contract.objects.create(
             farm = farm,
             crop_type = crop,
             quantity_required = quantity_required,
             reward_coins = reward_coins,   
-            expires_at = expires_at,
+            expires_at = batch_expires_at,
         )
 
     return Contract.objects.filter(
         farm = farm,
-        completed_at__isnull=True,
         expires_at__gt=now,
-    )
+    ).order_by('created_at')[:desired_count]

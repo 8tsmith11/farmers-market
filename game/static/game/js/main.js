@@ -125,4 +125,74 @@ function initTimers() {
     setInterval(tick, 1000);
 }
 
-document.addEventListener('DOMContentLoaded', initTimers);
+function initContractBoard() {
+    const items = Array.from(document.querySelectorAll('.contract-item'));
+    const timerEl = document.getElementById('contracts-timer');
+    const expiresAt = timerEl ? new Date(timerEl.getAttribute('data-expires-at')).getTime() : null;
+    if (!items.length || !timerEl || !expiresAt) return;
+
+    let refreshed = false;
+
+    function formatCountdown(seconds) {
+        if (seconds <= 0) return 'Expired';
+        const minutes = Math.floor(seconds / 60);
+        const secs = Math.max(0, seconds % 60);
+        return `${minutes}:${secs.toString().padStart(2, '0')}`;
+    }
+
+    function updateContractTimers() {
+        const now = Date.now();
+        const diffSeconds = Math.floor((expiresAt - now) / 1000);
+        if (diffSeconds <= 0) {
+            timerEl.textContent = 'New Contracts In: 0:00';
+            items.forEach(item => {
+                item.classList.add('contract-expired');
+                item.classList.remove('contract-active');
+            });
+            if (!refreshed) {
+                refreshed = true;
+                setTimeout(() => window.location.reload(), 500);
+            }
+        } else {
+            timerEl.textContent = 'New Contracts In: ' + formatCountdown(diffSeconds);
+        }
+    }
+
+    function tryComplete(item) {
+        if (
+            item.classList.contains('contract-expired') ||
+            item.classList.contains('contract-completed') ||
+            item.classList.contains('contract-busy')
+        ) return;
+        const id = item.getAttribute('data-contract-id');
+        if (!id) return;
+
+        item.classList.add('contract-busy');
+        fetch(`/api/contracts/${id}/complete/`, {
+            method: 'POST',
+            headers: {
+                'X-CSRFToken': csrftoken,
+            },
+        }).then(async (resp) => {
+            if (resp.ok) {
+                window.location.reload();
+            }
+        }).catch(() => {
+            // silent failure per requirements
+        }).finally(() => {
+            item.classList.remove('contract-busy');
+        });
+    }
+
+    items.forEach(item => {
+        item.addEventListener('click', () => tryComplete(item));
+    });
+
+    updateContractTimers();
+    setInterval(updateContractTimers, 1000);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    initTimers();
+    initContractBoard();
+});

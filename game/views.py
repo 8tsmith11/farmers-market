@@ -7,7 +7,7 @@ from datetime import timedelta
 from rest_framework import status
 from django.contrib.auth.decorators import login_required
 
-from .models import Farm, CropType, InventoryItem, Plot, ensure_contracts_for_farm
+from .models import Contract, Farm, CropType, InventoryItem, Plot, ensure_contracts_for_farm
 from .serializers import ContractSerializer, FarmSerializer, CropTypeSerializer, InventoryItemSerializer, PlotSerializer
 
 # Create your views here.
@@ -177,3 +177,74 @@ def contract_list(request):
     contracts = ensure_contracts_for_farm(farm)
     serializer = ContractSerializer(contracts, many=True)
     return Response(serializer.data)
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def complete_contract(request, contract_id):
+    farm = Farm.objects.get(user=request.user)
+    contract = get_object_or_404(Contract, id=contract_id, farm=farm)
+
+    if contract.is_completed:
+        return Response({'detail': 'Contract already completed.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if contract.is_expired:
+        return Response({'detail': 'Contract expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    try:
+        item = InventoryItem.objects.get(farm=farm, crop_type=contract.crop_type)
+    except InventoryItem.DoesNotExist:
+        return Response({'detail': 'Not enough inventory to complete contract.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    if item.quantity < contract.quantity_required:
+        return Response({'detail': 'Not enough inventory to complete contract.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    item.quantity -= contract.quantity_required
+    item.save()
+
+    farm.balance += contract.reward_coins
+    farm.save()
+
+    contract.completed_at = timezone.now()
+    contract.save()
+
+    serializer = ContractSerializer(contract)
+    return Response({
+        'contract': serializer.data,
+        'balance': farm.balance,
+        'inventory_item': InventoryItemSerializer(item).data,
+    })
+
+@api_view(['POST'])
+@permission_classes([IsAuthenticated])
+def complete_contract(request, contract_id):
+    farm = Farm.objects.get(user=request.user)
+    contract = get_object_or_404(Contract, id=contract_id, farm=farm)
+
+    if contract.is_completed:
+        return Response({'detail': 'Contract is already completed.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    if contract.is_expired:
+        return Response({'detail': 'Contract has expired.'}, status=status.HTTP_400_BAD_REQUEST)
+
+    # check inventory
+    item = InventoryItem.objects.filter(farm=farm, crop_type=contract.crop_type).first()
+
+    if item is None or item.quantity < contract.quantity_required:
+        return Response({'detail': 'Insufficient crops in inventory to complete contract.'}, status=status.HTTP_400_BAD_REQUEST)
+    
+    # consume crops
+    item.quantity -= contract.quantity_required
+    item.save()
+
+    # reward coins
+    farm.balance += contract.reward_coins
+    farm.save()
+
+    # mark completed
+    contract.completed_at = timezone.now()
+    contract.save()
+
+    return Response({
+        'farm': FarmSerializer(farm).data,
+        'contract': ContractSerializer(contract).data,
+    })
